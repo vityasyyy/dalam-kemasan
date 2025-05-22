@@ -41,7 +41,7 @@ services:
             - "${GRAFANA_PORT}:${GRAFANA_PORT}"
         environment:
             - GF_SECURITY_ADMIN_PASSWORD=admin
-            - GF_AUTH_ANONYMOUS_ENABLED=true
+            - GF_AUTH_ANONYMOUS_ENABLED=false
             - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
             - GF_AUTH_ANONYMOUS_ORG_ID=1
         networks:
@@ -81,6 +81,19 @@ services:
         ports:
             - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
 
+    minio:
+        image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+        ports:
+            - "9001:9001" # API port
+            - "9000:9000" # Console port
+        volumes:
+            - minio-data:/data
+        env_file:
+            - auth-service/.env # Assuming MINIO_ROOT_USER and MINIO_ROOT_PASSWORD are in this file
+        command: server /data --console-address ":9001"
+        networks:
+            - dalam-kemasan-network
+
 networks:
     dalam-kemasan-network:
         external: true
@@ -91,3 +104,4 @@ volumes:
     grafana-storage:
     loki-data:
     prometheus-data:
+    minio-data:

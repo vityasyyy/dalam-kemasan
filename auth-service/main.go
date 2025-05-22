@@ -72,6 +72,13 @@ func main() {
 	authService := services.NewAuthService(authRepo, tokenService)
 	userHandler := handlers.NewUserHandler(authService, tokenService)
 
+	fileRepo := repositories.NewFileRepo(db)
+	fileService, err := services.NewFileService(fileRepo)
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to initialize file service")
+	}
+	fileHandler := handlers.NewFileHandler(fileService)
+
 	// Gin router setup
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -97,7 +104,7 @@ func main() {
 	r.Use(requestSizeLimitMiddleware(2 << 20))
 	r.Use(timeoutMiddleware(20 * time.Second))
 
-	routes.InitializeRoutes(r, userHandler)
+	routes.InitializeRoutes(r, userHandler, fileHandler)
 
 	// Server configuration
 	port := os.Getenv("PORT")

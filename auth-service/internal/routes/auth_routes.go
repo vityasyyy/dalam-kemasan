@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeRoutes(r *gin.Engine, userHandler *handlers.UserHandler) {
+func InitializeRoutes(r *gin.Engine, userHandler *handlers.UserHandler, fileHandler *handlers.FileHandler) { // Added fileHandler
 	ping := r.Group("/ping")
 	{
 		ping.GET("/", func(c *gin.Context) {
@@ -35,6 +35,21 @@ func InitializeRoutes(r *gin.Engine, userHandler *handlers.UserHandler) {
 		{
 			authorized.GET("/validateprofile", userHandler.ValidateUserAndGetInfoHandler)
 			authorized.POST("/logout", userHandler.LogoutUserHandler)
+
+			// File management routes
+			fileRoutes := authorized.Group("/files")
+			{
+				fileRoutes.POST("/upload", fileHandler.UploadFileHandler)
+				fileRoutes.GET("/download/:fileID", fileHandler.DownloadFileHandler)
+				fileRoutes.DELETE("/:fileID", fileHandler.DeleteFileHandler)
+				fileRoutes.GET("/list", fileHandler.ListFilesHandler) // Route to list user's files
+			}
+
+			// Billing route
+			billingRoutes := authorized.Group("/billing")
+			{
+				billingRoutes.GET("/", fileHandler.GetBillingInfoHandler)
+			}
 		}
 	}
 }

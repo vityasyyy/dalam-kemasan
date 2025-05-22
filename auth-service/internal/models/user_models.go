@@ -9,4 +9,6 @@ type User struct {
 	Password         string    `db:"password" json:"password" binding:"required,min=8"`
 	ResetToken       string    `db:"reset_token" json:"reset_token"`
 	ResetTokenExpiry time.Time `db:"reset_token_expiry" json:"reset_token_expiry"`
+	StorageUsed      int64     `db:"storage_used" json:"storage_used"`
+	StorageLimit     int64     `db:"storage_limit" json:"storage_limit"`
 }
