@@ -24,20 +24,20 @@ func NewFileRepo(db *sqlx.DB) FileRepo {
 }
 
 func (r *fileRepo) CreateFileMetadata(file *models.File) error {
-	query := "INSERT INTO files (user_id, file_name, file_size, s3_object_key, content_type, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING file_id"
-	return r.db.QueryRowx(query, file.UserID, file.FileName, file.FileSize, file.S3ObjectKey, file.ContentType, file.CreatedAt).Scan(&file.FileID)
+	query := "INSERT INTO files (user_id, file_name, file_size, s3_object_key, content_type, created_at, uploaded_with_package) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING file_id"
+	return r.db.QueryRowx(query, file.UserID, file.FileName, file.FileSize, file.S3ObjectKey, file.ContentType, file.CreatedAt, file.UploadedWithPackage).Scan(&file.FileID)
 }
 
 func (r *fileRepo) GetFileMetadata(fileID int, userID int) (*models.File, error) {
 	file := &models.File{}
-	query := "SELECT file_id, user_id, file_name, file_size, s3_object_key, content_type, created_at FROM files WHERE file_id = $1 AND user_id = $2"
+	query := "SELECT file_id, user_id, file_name, file_size, s3_object_key, content_type, created_at, uploaded_with_package FROM files WHERE file_id = $1 AND user_id = $2"
 	err := r.db.Get(file, query, fileID, userID)
 	return file, err
 }
 
 func (r *fileRepo) GetFilesMetadataByUser(userID int) ([]*models.File, error) {
 	var files []*models.File
-	query := "SELECT file_id, user_id, file_name, file_size, s3_object_key, content_type, created_at FROM files WHERE user_id = $1"
+	query := "SELECT file_id, user_id, file_name, file_size, s3_object_key, content_type, created_at, uploaded_with_package FROM files WHERE user_id = $1"
 	err := r.db.Select(&files, query, userID)
 	return files, err
 }

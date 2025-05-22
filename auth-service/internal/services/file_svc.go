@@ -12,11 +12,9 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-const maxFileSize = 5 * 1024 * 1024 // 5MB
-
 type FileService interface {
-	UploadFile(ctx context.Context, userID int, fileHeader *multipart.FileHeader) (*models.File, error)
-	DownloadFile(ctx context.Context, userID int, fileID int) (*minio.Object, *models.File, error)
+	UploadFile(ctx context.Context, userID int, fileHeader *multipart.FileHeader, currentUserPackage string) (*models.File, error)
+	DownloadFile(ctx context.Context, userID int, fileID int, currentUserPackage string) (*minio.Object, *models.File, error)
 	DeleteFile(ctx context.Context, userID int, fileID int) error
 	GetUserStorageInfo(userID int) (*models.UserStorage, error)
 	ListUserFiles(userID int) ([]*models.File, error)
@@ -63,7 +61,7 @@ func NewFileService(fileRepo repositories.FileRepo) (FileService, error) {
 	}, nil
 }
 
-func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *multipart.FileHeader) (*models.File, error) {
+func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *multipart.FileHeader, currentUserPackage string) (*models.File, error) {
 	// Check user storage limit
 	userStorage, err := s.fileRepo.GetUserStorage(userID)
 	if err != nil {
@@ -88,11 +86,12 @@ func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *mu
 	}
 
 	fileMetadata := &models.File{
-		UserID:      userID,
-		FileName:    fileHeader.Filename,
-		FileSize:    fileHeader.Size,
-		S3ObjectKey: s3ObjectKey,
-		ContentType: fileHeader.Header.Get("Content-Type"),
+		UserID:              userID,
+		FileName:            fileHeader.Filename,
+		FileSize:            fileHeader.Size,
+		S3ObjectKey:         s3ObjectKey,
+		ContentType:         fileHeader.Header.Get("Content-Type"),
+		UploadedWithPackage: currentUserPackage, // Set the package with which the file was uploaded
 	}
 
 	if err := s.fileRepo.CreateFileMetadata(fileMetadata); err != nil {
@@ -111,10 +110,15 @@ func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *mu
 	return fileMetadata, nil
 }
 
-func (s *fileService) DownloadFile(ctx context.Context, userID int, fileID int) (*minio.Object, *models.File, error) {
+func (s *fileService) DownloadFile(ctx context.Context, userID int, fileID int, currentUserPackage string) (*minio.Object, *models.File, error) {
 	fileMetadata, err := s.fileRepo.GetFileMetadata(fileID, userID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get file metadata: %w", err)
+	}
+
+	// Check if the file was uploaded with a premium package and if the user is still premium
+	if fileMetadata.UploadedWithPackage == "premium" && currentUserPackage != "premium" {
+		return nil, nil, fmt.Errorf("this file was uploaded with a premium package. Please upgrade to premium to access it")
 	}
 
 	object, err := s.minioClient.GetObject(ctx, s.bucketName, fileMetadata.S3ObjectKey, minio.GetObjectOptions{})

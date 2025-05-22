@@ -5,8 +5,9 @@ CREATE TABLE IF NOT EXISTS users(
     reset_token VARCHAR(255),
     reset_token_expiry TIMESTAMP,
     password VARCHAR(255) NOT NUll,
+    package VARCHAR(50) NOT NULL DEFAULT 'free', -- Added package type
     storage_used BIGINT DEFAULT 0,
-    storage_limit BIGINT DEFAULT 5242880 -- 5MB in bytes (5 * 1024 * 1024)
+    storage_limit BIGINT DEFAULT 2097152 -- 2MB in bytes (5 * 1024 * 1024)
 );
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_size BIGINT NOT NULL,
     s3_object_key VARCHAR(1024) UNIQUE NOT NULL,
     content_type VARCHAR(255) NOT NULL,
+    uploaded_with_package VARCHAR(50) NOT NULL, -- Added package type at upload
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );

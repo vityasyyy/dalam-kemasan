@@ -16,6 +16,7 @@ type AuthService interface {
 	LoginUser(email, password string) (string, string, error)
 	RequestPasswordReset(email string) error
 	ResetPassword(resetToken, newPassword string) error
+	UpgradeUserPackage(userID int, newPackage string) error // Added method to upgrade user package
 }
 
 type authService struct {
@@ -45,6 +46,11 @@ func (s *authService) RegisterUser(userFromHandlers *models.User) error {
 	// set the user struct that is passed by the handlers password to the hashed password
 	userFromHandlers.Password = hashedPassword
 
+	// Set default package to free if not provided
+	if userFromHandlers.Package == "" {
+		userFromHandlers.Package = "free"
+	}
+
 	// call the repo and create the user using the repo function, if the error is nil then log the error
 	if err := s.authRepo.CreateUser(userFromHandlers); err != nil {
 		logger.LogError(err, "Failed to create user", map[string]interface{}{"layer": "service", "operation": "RegisterUser"})
@@ -68,11 +74,10 @@ func (s *authService) LoginUser(email, password string) (string, string, error) 
 		return "", "", errors.New("invalid email or password")
 	}
 
-	// if all is okay then generate the token pair and return it to the handler to be sent to the client
 	accessToken, refreshToken, err := s.tokenService.GenerateAccessRefreshTokenPair(userThatWantsToLogin.UserID)
 	if err != nil {
-		logger.LogError(err, "Failed to generate token pair", map[string]interface{}{"layer": "service", "operation": "LoginUser"})
-		return "", "", errors.New("failed to generate token pair")
+		logger.LogError(err, "Failed to generate access and refresh token", map[string]interface{}{"layer": "service", "operation": "LoginUser"})
+		return "", "", errors.New("failed to generate access and refresh token")
 	}
 
 	return accessToken, refreshToken, nil
@@ -153,5 +158,21 @@ func (s *authService) ResetPassword(resetToken, newPassword string) error {
 		return errors.New("failed to reset password")
 	}
 
+	return nil
+}
+
+func (s *authService) UpgradeUserPackage(userID int, newPackage string) error {
+	if newPackage != "free" && newPackage != "premium" {
+		return errors.New("invalid package type")
+	}
+
+	newStorage := 5242880
+	// Potentially add more logic here, e.g., payment processing, before upgrading
+	err := s.authRepo.UpgradeUserPackage(userID, newStorage, newPackage)
+	if err != nil {
+		logger.LogError(err, "Failed to upgrade user package in service", map[string]interface{}{"layer": "service", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
+		return err
+	}
+	logger.LogDebug("User package upgraded in service", map[string]interface{}{"layer": "service", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
 	return nil
 }

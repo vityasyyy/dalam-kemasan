@@ -37,6 +37,7 @@ func ValidateAccessTokenMiddleware() gin.HandlerFunc {
 		c.Set("user_id", accessTokenClaims.UserID)
 		c.Set("email", accessTokenClaims.Email)
 		c.Set("username", accessTokenClaims.Username)
+		c.Set("package", accessTokenClaims.Package) // Added package to context
 		// proceed the request further
 		c.Next()
 	}

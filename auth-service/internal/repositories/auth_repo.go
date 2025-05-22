@@ -15,6 +15,7 @@ type AuthRepo interface {
 	GetUserByID(userID int) (*models.User, error)
 	ResetPassword(newPassword, resetToken string) error
 	RequestingPasswordReset(email, resetToken string, resetTokenExpiredAt time.Time) error
+	UpgradeUserPackage(userID, newStorage int, newPackage string) error // Added method to upgrade user package
 }
 
 type authRepo struct {
@@ -30,9 +31,9 @@ func NewAuthRepo(db *sqlx.DB) AuthRepo {
 // This function implements the CreateUser method from the AuthRepo interface, it creates a new user in the database, accepts the user models as the params, and returns an error if the query fails
 func (r *authRepo) CreateUser(user *models.User) error {
 	// Define the query to insert a new user
-	query := "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING user_id"
+	query := "INSERT INTO users (email, username, password, package) VALUES ($1, $2, $3, $4) RETURNING user_id" // Added package to insert
 	// Execute the query and scan the result into the user struct
-	err := r.db.QueryRow(query, user.Email, user.Username, user.Password).Scan(&user.UserID)
+	err := r.db.QueryRow(query, user.Email, user.Username, user.Password, user.Package).Scan(&user.UserID) // Added user.Package
 	if err != nil {
 		// Log the error if the query fails
 		logger.LogError(err, "Failed to create user", map[string]interface{}{"layer": "repository", "operation": "CreateUser"})
@@ -46,7 +47,7 @@ func (r *authRepo) CreateUser(user *models.User) error {
 func (r *authRepo) GetUserByEmail(email string) (*models.User, error) {
 	// Create a new user struct to store the result
 	var user models.User
-	query := "SELECT user_id, email, username, password FROM users WHERE email = $1"
+	query := "SELECT user_id, email, username, password, package, storage_used, storage_limit FROM users WHERE email = $1" // Added package, storage_used, storage_limit
 	// Get the user struct from the database using the query and the username
 	err := r.db.Get(&user, query, email)
 	if err != nil {
@@ -59,7 +60,7 @@ func (r *authRepo) GetUserByEmail(email string) (*models.User, error) {
 
 func (r *authRepo) GetUserByID(userID int) (*models.User, error) {
 	var user models.User
-	query := "SELECT user_id, email, username, password FROM users WHERE user_id = $1"
+	query := "SELECT user_id, email, username, password, package, storage_used, storage_limit FROM users WHERE user_id = $1" // Added package, storage_used, storage_limit
 	err := r.db.Get(&user, query, userID)
 	if err != nil {
 		logger.LogError(err, "Failed to get user", map[string]interface{}{"layer": "repository", "operation": "GetUserByID"})
@@ -88,5 +89,16 @@ func (r *authRepo) RequestingPasswordReset(email, resetToken string, resetTokenE
 		return err
 	}
 	logger.LogDebug("Password reset requested", map[string]interface{}{"layer": "repository", "operation": "RequestingPasswordReset"})
+	return nil
+}
+
+func (r *authRepo) UpgradeUserPackage(userID, newStorage int, newPackage string) error {
+	query := "UPDATE users SET package = $1, storage_limit = $2 WHERE user_id = $3"
+	_, err := r.db.Exec(query, newPackage, newStorage, userID)
+	if err != nil {
+		logger.LogError(err, "Failed to upgrade user package", map[string]interface{}{"layer": "repository", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
+		return err
+	}
+	logger.LogDebug("User package upgraded", map[string]interface{}{"layer": "repository", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
 	return nil
 }

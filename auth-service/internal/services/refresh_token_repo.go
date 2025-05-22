@@ -33,7 +33,7 @@ func (s *refreshTokenService) GenerateAccessRefreshTokenPair(userID int) (string
 	}
 
 	// generate access token using the user that we fetched
-	accessToken, err := utils.CreateAccessToken(user.UserID, user.Username, user.Email)
+	accessToken, err := utils.CreateAccessToken(user.UserID, user.Username, user.Email, user.Package)
 	if err != nil {
 		logger.LogError(err, "Failed to generate access token", map[string]interface{}{"layer": "service", "operation": "GenerateAccessRefreshTokenPair"})
 		return "", "", err

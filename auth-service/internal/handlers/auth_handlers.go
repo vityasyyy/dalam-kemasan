@@ -4,6 +4,7 @@ import (
 	"auth-service/internal/models"
 	"auth-service/internal/services"
 	"auth-service/internal/utils"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -178,4 +179,35 @@ func (h *UserHandler) ResetPasswordHandler(c *gin.Context) {
 
 	// return a success message and status code 200
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful"})
+}
+
+func (h *UserHandler) UpgradePackageHandler(c *gin.Context) {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	type UpgradeRequest struct {
+		Package string `json:"package" binding:"required"`
+	}
+	var req UpgradeRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body. 'package' field is required (e.g., 'premium')."})
+		return
+	}
+
+	if req.Package != "free" && req.Package != "premium" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package type. Must be 'free' or 'premium'."})
+		return
+	}
+
+	err = h.authService.UpgradeUserPackage(userID, req.Package)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to upgrade package: %s", err.Error())})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User package successfully upgraded to %s", req.Package)})
 }

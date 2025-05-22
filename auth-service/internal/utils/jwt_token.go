@@ -16,16 +16,18 @@ type AccessTokenClaims struct {
 	UserID   int    `json:"user_id"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
+	Package  string `json:"package"` // Added field for user package type
 	jwt.RegisteredClaims
 }
 
 // Create AccessToken for the user to later be sent via cookies to the frontend (used for authentication and authorization)
-func CreateAccessToken(userID int, username, email string) (string, error) {
+func CreateAccessToken(userID int, username, email, userPackage string) (string, error) { // Added userPackage parameter
 	expirationTime := time.Now().Add(15 * time.Minute)
 	claims := AccessTokenClaims{
 		UserID:   userID,
 		Email:    email,
 		Username: username,
+		Package:  userPackage, // Set the package claim
 		// RegisteredClaims is a struct that contains the standard claims (exp, iat, nbf, iss, aud, sub, jti)
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),

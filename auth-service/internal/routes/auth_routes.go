@@ -49,6 +49,7 @@ func InitializeRoutes(r *gin.Engine, userHandler *handlers.UserHandler, fileHand
 			billingRoutes := authorized.Group("/billing")
 			{
 				billingRoutes.GET("/", fileHandler.GetBillingInfoHandler)
+				billingRoutes.POST("/upgrade", userHandler.UpgradePackageHandler)
 			}
 		}
 	}

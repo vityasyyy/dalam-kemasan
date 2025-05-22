@@ -27,6 +27,13 @@ func (h *FileHandler) UploadFileHandler(c *gin.Context) {
 		return
 	}
 
+	// Get current user's package from context
+	currentUserPackage, ok := c.Get("package")
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user package from context"})
+		return
+	}
+
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File not provided or invalid"})
@@ -38,7 +45,7 @@ func (h *FileHandler) UploadFileHandler(c *gin.Context) {
 		return
 	}
 
-	fileMetadata, err := h.fileService.UploadFile(c.Request.Context(), userID, fileHeader)
+	fileMetadata, err := h.fileService.UploadFile(c.Request.Context(), userID, fileHeader, currentUserPackage.(string)) // Pass package to service
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to upload file: %s", err.Error())})
 		return
@@ -61,7 +68,14 @@ func (h *FileHandler) DownloadFileHandler(c *gin.Context) {
 		return
 	}
 
-	object, fileMetadata, err := h.fileService.DownloadFile(c.Request.Context(), userID, fileID)
+	// Get current user's package from context
+	currentUserPackage, ok := c.Get("package")
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user package from context"})
+		return
+	}
+
+	object, fileMetadata, err := h.fileService.DownloadFile(c.Request.Context(), userID, fileID, currentUserPackage.(string)) // Pass package to service
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to download file: %s", err.Error())})
 		return
