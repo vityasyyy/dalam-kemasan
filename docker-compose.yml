@@ -1,0 +1,93 @@
+services:
+    # LOKI SERVICE
+    loki:
+        image: grafana/loki:2.9.0
+        ports:
+            - "3100:3100"
+        volumes:
+            - ./loki/loki-config.yaml:/etc/loki/local-config.yaml
+            - ./loki:/loki
+        command: -config.file=/etc/loki/local-config.yaml
+        networks:
+            - dalam-kemasan-network
+
+    promtail:
+        image: grafana/promtail:2.9.0
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./promtail/config.yaml:/etc/promtail/config.yaml
+            - ./promtail:/etc/promtail
+            - ./auth-service/var/log/auth-service:/var/log/auth-service
+        command: -config.file=/etc/promtail/config.yaml
+        networks:
+            - dalam-kemasan-network
+        
+    # prometheus
+    prometheus:
+        image: prom/prometheus:v2.43.0
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+            - ./prometheus:/prometheus
+        networks:
+            - dalam-kemasan-network
+        command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+
+    grafana: 
+        image: grafana/grafana:10.2.2
+        ports:
+            - "${GRAFANA_PORT}:${GRAFANA_PORT}"
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+            - GF_AUTH_ANONYMOUS_ENABLED=true
+            - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
+            - GF_AUTH_ANONYMOUS_ORG_ID=1
+        networks:
+            - dalam-kemasan-network
+        volumes:
+            - grafana-storage:/var/lib/grafana
+    # auth service
+    # Database for the auth service
+    auth-service-db:
+        image: postgres:17.2-alpine
+        env_file:
+            - auth-service/.env
+        volumes:
+            - ./auth-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql # init script
+            - auth-data:/var/lib/postgresql/data
+        networks:
+            - dalam-kemasan-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U dalamKemasan -d auth_service_db"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    # API for the auth service
+    auth-service-api:
+        build: ./auth-service
+        env_file:
+            - auth-service/.env
+            - .env
+        depends_on:
+            auth-service-db:
+                condition: service_healthy # Ensure DB is ready
+        volumes:
+          - ./auth-service/var/log/auth-service:/var/log/auth-service
+        networks:
+            - dalam-kemasan-network
+        ports:
+            - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
+
+networks:
+    dalam-kemasan-network:
+        external: true
+
+# volumes for persistent data
+volumes:
+    auth-data:
+    grafana-storage:
+    loki-data:
+    prometheus-data:

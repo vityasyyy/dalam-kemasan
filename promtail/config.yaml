@@ -1,0 +1,27 @@
+server:
+  http_listen_port: 9080  # Promtail metrics endpoint
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push  # Loki endpoint
+
+positions:
+  filename: /tmp/positions.yaml  # Track file positions
+
+scrape_configs:
+  # Auth Service Logs
+  - job_name: auth-service
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: auth-service
+          __path__: /var/log/auth-service/*.log  # Log path
+    pipeline_stages:
+      - json:  # For structured logs
+          expressions:
+            level: level
+            layer: layer
+            operation: operation
+      - labels:
+          level:  # Create label from log field
+          layer:
+          operation:

@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s  # How often to collect metrics
+  evaluation_interval: 15s  # Rule evaluation frequency
+
+scrape_configs:
+  # Monitor Prometheus itself
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Loki Metrics
+  - job_name: loki
+    static_configs:
+      - targets: ['loki:3100']  # Loki metrics endpoint
+      
+  # Auth Service Metrics
+  - job_name: auth-service
+    static_configs:
+      - targets: ['auth-service-api:8081']  # Your service's metrics port
+    metrics_path: /metrics  # Default endpoint
