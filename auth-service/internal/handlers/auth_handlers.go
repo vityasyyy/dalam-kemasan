@@ -209,5 +209,18 @@ func (h *UserHandler) UpgradePackageHandler(c *gin.Context) {
 		return
 	}
 
+	// after upgrading the package, generate new access and refresh tokens
+	accessToken, refreshToken, err := h.tokenService.GenerateAccessRefreshTokenPair(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate new tokens: %s", err.Error())})
+		return
+	}
+
+	// set the access and refresh token in the cookie
+	if err := utils.SetAccessAndRefresh(c, accessToken, refreshToken); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to set cookie", "error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User package successfully upgraded to %s", req.Package)})
 }
