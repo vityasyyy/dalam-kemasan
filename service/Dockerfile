@@ -18,7 +18,7 @@ RUN go mod download
 COPY . .
 
 # compile the service
-RUN go build -o auth-service ./main.go
+RUN go build -o service ./main.go
 
 # STAGE 2: Run stage using Alpine, but as a non-root user
 FROM alpine:3.21
@@ -33,13 +33,13 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /home/appuser/
 
 # Copy binary before switching users (avoids permission issues)
-COPY --from=builder /app/auth-service /usr/local/bin/auth-service
+COPY --from=builder /app/service /usr/local/bin/service
 
 # Ensure binary is executable
-RUN chmod +x /usr/local/bin/auth-service
+RUN chmod +x /usr/local/bin/service
 
 # Switch to the non-root user
 USER appuser
 
 # Run the compiled binary
-CMD ["auth-service"]
+CMD ["service"]

@@ -17,7 +17,7 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock
             - ./promtail/config.yaml:/etc/promtail/config.yaml
             - ./promtail:/etc/promtail
-            - ./auth-service/var/log/auth-service:/var/log/auth-service
+            - ./service/var/log/service:/var/log/service
         command: -config.file=/etc/promtail/config.yaml
         networks:
             - dalam-kemasan-network
@@ -50,13 +50,13 @@ services:
             - grafana-storage:/var/lib/grafana
     # auth service
     # Database for the auth service
-    auth-service-db:
+    service-db:
         image: postgres:17.2-alpine
         env_file:
-            - auth-service/.env
+            - service/.env
         volumes:
-            - ./auth-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql # init script
-            - auth-data:/var/lib/postgresql/data
+            - ./service/db/init.sql:/docker-entrypoint-initdb.d/init.sql # init script
+            - service-data:/var/lib/postgresql/data
         networks:
             - dalam-kemasan-network
         healthcheck:
@@ -66,20 +66,20 @@ services:
             retries: 5
 
     # API for the auth service
-    auth-service-api:
-        build: ./auth-service
+    service-api:
+        build: ./service
         env_file:
-            - auth-service/.env
+            - service/.env
             - .env
         depends_on:
-            auth-service-db:
+            service-db:
                 condition: service_healthy # Ensure DB is ready
         volumes:
-          - ./auth-service/var/log/auth-service:/var/log/auth-service
+          - ./service/var/log/service:/var/log/service
         networks:
             - dalam-kemasan-network
         ports:
-            - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
+            - ${SERVICE_PORT}:${SERVICE_PORT}
 
     minio:
         image: minio/minio:RELEASE.2023-03-20T20-16-18Z
@@ -89,7 +89,7 @@ services:
         volumes:
             - minio-data:/data
         env_file:
-            - auth-service/.env # Assuming MINIO_ROOT_USER and MINIO_ROOT_PASSWORD are in this file
+            - service/.env # Assuming MINIO_ROOT_USER and MINIO_ROOT_PASSWORD are in this file
         command: server /data --console-address ":9001"
         networks:
             - dalam-kemasan-network
@@ -100,7 +100,7 @@ networks:
 
 # volumes for persistent data
 volumes:
-    auth-data:
+    service-data:
     grafana-storage:
     loki-data:
     prometheus-data:
