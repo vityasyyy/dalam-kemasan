@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"auth-service/internal/handlers"
-	"auth-service/internal/utils"
+	"service/internal/handlers"
+	"service/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )

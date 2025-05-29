@@ -48,8 +48,8 @@ services:
             - dalam-kemasan-network
         volumes:
             - grafana-storage:/var/lib/grafana
-    # auth service
-    # Database for the auth service
+    # service
+    # Database for the service
     service-db:
         image: postgres:17.2-alpine
         env_file:
@@ -65,7 +65,7 @@ services:
             timeout: 5s
             retries: 5
 
-    # API for the auth service
+    # API for the service
     service-api:
         build: ./service
         env_file:

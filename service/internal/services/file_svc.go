@@ -1,12 +1,12 @@
 package services
 
 import (
-	"auth-service/internal/models"
-	"auth-service/internal/repositories"
 	"context"
 	"fmt"
 	"mime/multipart"
 	"os"
+	"service/internal/models"
+	"service/internal/repositories"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"

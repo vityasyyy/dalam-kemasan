@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"auth-service/internal/models"
+	"service/internal/models"
 
 	"github.com/jmoiron/sqlx"
 )

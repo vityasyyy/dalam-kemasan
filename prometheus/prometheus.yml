@@ -13,8 +13,8 @@ scrape_configs:
     static_configs:
       - targets: ['loki:3100']  # Loki metrics endpoint
       
-  # Auth Service Metrics
-  - job_name: auth-service
+  # Service Metrics
+  - job_name: service
     static_configs:
-      - targets: ['auth-service-api:8081']  # Your service's metrics port
+      - targets: ['service-api:8081']  # Your service's metrics port
     metrics_path: /metrics  # Default endpoint

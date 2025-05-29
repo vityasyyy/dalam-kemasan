@@ -35,7 +35,7 @@ Dalam Kemasan is a production-ready SaaS application designed to demonstrate mod
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │────│  Auth Service   │────│   PostgreSQL    │
+│   Frontend      │────│  Service        │────│   PostgreSQL    │
 │   (React/Vue)   │    │     (Go)        │    │   Database      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
@@ -78,11 +78,11 @@ GRAFANA_PORT=3000
 AUTH_SERVICE_PORT=8081
 ```
 
-Create auth service environment file:
+Create service environment file:
 
 ```bash
-# auth-service/.env
-DB_URL=postgresql://dalamKemasan:securepassword123@auth-service-db:5432/auth_service_db?sslmode=disable
+# service/.env
+DB_URL=postgresql://dalamKemasan:securepassword123@service-db:5432/service_db?sslmode=disable
 JWT_ACCESS_SECRET=your-super-secret-jwt-key-here-change-this
 PORT=8081
 CORS_URL=http://localhost:3000,http://localhost:5173
@@ -128,14 +128,14 @@ docker-compose ps
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Auth API** | http://localhost:8081 | - |
+| **API** | http://localhost:8081 | - |
 | **Grafana** | http://localhost:3000 | admin / admin |
 | **Prometheus** | http://localhost:9090 | - |
 | **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin123 |
 
 ## 📚 API Documentation
 
-### Authentication Endpoints
+### Endpoints
 
 ```bash
 # Register user
@@ -190,41 +190,41 @@ POST /api/v1/auth/billing/upgrade
 
 ```bash
 # Run without Docker (requires Go 1.21+)
-cd auth-service
+cd service
 go mod tidy
 go run main.go
 
 # Build binary
-go build -o bin/auth-service main.go
+go build -o bin/service main.go
 ```
 
 ### Adding New Features
 
-1. **Controllers** → `auth-service/internal/handlers/`
-2. **Business Logic** → `auth-service/internal/services/`
-3. **Data Access** → `auth-service/internal/repositories/`
-4. **Models** → `auth-service/internal/models/`
-5. **Routes** → `auth-service/internal/routes/`
+1. **Controllers** → `service/internal/handlers/`
+2. **Business Logic** → `service/internal/services/`
+3. **Data Access** → `service/internal/repositories/`
+4. **Models** → `service/internal/models/`
+5. **Routes** → `service/internal/routes/`
 
 ## 📊 Monitoring & Observability
 
 ### Grafana Dashboards
 
-- **Auth Service Metrics** - Request rates, response times, error rates
+- **service Metrics** - Request rates, response times, error rates
 - **System Metrics** - CPU, Memory, Disk usage
 - **Business Metrics** - User registrations, file uploads, storage usage
 
 ### Log Queries (Loki)
 
 ```logql
-# View auth service logs
-{compose_service="auth-service-api"}
+# View service logs
+{compose_service="service-api"}
 
 # Filter error logs
-{compose_service="auth-service-api"} |= "ERROR"
+{compose_service="service-api"} |= "ERROR"
 
 # View specific operation
-{compose_service="auth-service-api"} |= "LoginUser"
+{compose_service="service-api"} |= "LoginUser"
 ```
 
 ## 🚀 Future Enhancements & Roadmap

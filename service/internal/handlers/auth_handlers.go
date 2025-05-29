@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"auth-service/internal/models"
-	"auth-service/internal/services"
-	"auth-service/internal/utils"
 	"fmt"
 	"net/http"
+	"service/internal/models"
+	"service/internal/services"
+	"service/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )

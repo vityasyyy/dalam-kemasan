@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"auth-service/internal/logger"
-	"auth-service/internal/metrics"
 	"fmt"
+	"service/internal/logger"
+	"service/internal/metrics"
 	"time"
 
 	"github.com/gin-gonic/gin"

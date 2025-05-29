@@ -37,17 +37,17 @@ func InitLogger() {
 		// Cloud Run detected → Log only to stdout/stderr with sampling
 		Log = zerolog.New(os.Stdout).With().
 			Timestamp().
-			Str("service", "auth-service").
+			Str("service", "service").
 			Logger()
 
 		// Don't sample error logs to ensure all errors are captured
 		ErrorLog = zerolog.New(os.Stderr).With().
 			Timestamp().
-			Str("service", "auth-service").
+			Str("service", "service").
 			Logger()
 	} else {
 		// Local or other environments → Log to both file and stdout
-		logPath := "/var/log/auth-service"
+		logPath := "/var/log/service"
 		if err := os.MkdirAll(logPath, os.ModePerm); err != nil {
 			log.Printf("ERROR: Failed to create log directory '%s': %v", logPath, err)
 			return
@@ -80,13 +80,13 @@ func InitLogger() {
 
 		Log = zerolog.New(multiAppWriter).With().
 			Timestamp().
-			Str("service", "auth-service").
+			Str("service", "service").
 			Logger()
 
 		// Don't sample error logs
 		ErrorLog = zerolog.New(multiErrorWriter).With().
 			Timestamp().
-			Str("service", "auth-service").
+			Str("service", "service").
 			Logger()
 	}
 }

@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"auth-service/internal/services"
 	"fmt"
 	"io"
 	"net/http"
+	"service/internal/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

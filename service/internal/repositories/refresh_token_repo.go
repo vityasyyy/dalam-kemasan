@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"auth-service/internal/logger"
-	"auth-service/internal/models"
+	"service/internal/logger"
+	"service/internal/models"
 
 	"github.com/jmoiron/sqlx"
 )

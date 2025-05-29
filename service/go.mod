@@ -1,4 +1,4 @@
-module auth-service
+module service
 
 go 1.23.1
 

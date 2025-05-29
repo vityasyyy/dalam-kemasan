@@ -1,10 +1,10 @@
 package services
 
 import (
-	"auth-service/internal/logger"
-	"auth-service/internal/models"
-	"auth-service/internal/repositories"
-	"auth-service/internal/utils"
+	"service/internal/logger"
+	"service/internal/models"
+	"service/internal/repositories"
+	"service/internal/utils"
 	"time"
 )
 
