@@ -1,16 +1,16 @@
 package main
 
 import (
-	"auth-service/internal/handlers"
-	"auth-service/internal/logger"
-	"auth-service/internal/repositories"
-	"auth-service/internal/routes"
-	"auth-service/internal/services"
-	"auth-service/internal/utils"
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
+	"service/internal/handlers"
+	"service/internal/logger"
+	"service/internal/repositories"
+	"service/internal/routes"
+	"service/internal/services"
+	"service/internal/utils"
 	"strings"
 	"syscall"
 	"time"
