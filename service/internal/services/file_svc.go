@@ -7,6 +7,7 @@ import (
 	"os"
 	"service/internal/models"
 	"service/internal/repositories"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -22,11 +23,12 @@ type FileService interface {
 
 type fileService struct {
 	fileRepo    repositories.FileRepo
+	authRepo    repositories.AuthRepo
 	minioClient *minio.Client
 	bucketName  string
 }
 
-func NewFileService(fileRepo repositories.FileRepo) (FileService, error) {
+func NewFileService(fileRepo repositories.FileRepo, authRepo repositories.AuthRepo) (FileService, error) {
 	endpoint := os.Getenv("MINIO_ENDPOINT")
 	accessKeyID := os.Getenv("MINIO_ACCESS_KEY_ID")
 	secretAccessKey := os.Getenv("MINIO_SECRET_ACCESS_KEY")
@@ -56,20 +58,62 @@ func NewFileService(fileRepo repositories.FileRepo) (FileService, error) {
 
 	return &fileService{
 		fileRepo:    fileRepo,
+		authRepo:    authRepo,
 		minioClient: minioClient,
 		bucketName:  bucketName,
 	}, nil
 }
 
+// checkUserPackageValidity checks if user's premium package is still valid
+func (s *fileService) checkUserPackageValidity(userID int) (string, bool, error) {
+	user, err := s.authRepo.GetUserByID(userID)
+	if err != nil {
+		return "", false, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// If user has premium package, check expiry
+	if user.Package == "premium" {
+		if user.PackageExpiry != nil && time.Now().After(*user.PackageExpiry) {
+			// Package has expired, treat as free user
+			return "free", false, nil
+		}
+		return "premium", true, nil
+	}
+
+	return "free", true, nil
+}
+
 func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *multipart.FileHeader, currentUserPackage string) (*models.File, error) {
-	// Check user storage limit
+	// Check if user's package is still valid
+	actualPackage, isValid, err := s.checkUserPackageValidity(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isValid {
+		return nil, fmt.Errorf("your premium package has expired. Please upgrade to continue uploading files")
+	}
+
+	// Check user storage limit based on actual package status
 	userStorage, err := s.fileRepo.GetUserStorage(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user storage: %w", err)
 	}
 
-	if userStorage.StorageUsed+fileHeader.Size > userStorage.StorageLimit {
-		return nil, fmt.Errorf("storage limit exceeded. Available: %d bytes, File size: %d bytes", userStorage.StorageLimit-userStorage.StorageUsed, fileHeader.Size)
+	// Adjust storage limit based on actual package status
+	var effectiveStorageLimit int64
+	if actualPackage == "premium" {
+		effectiveStorageLimit = userStorage.StorageLimit
+	} else {
+		// If premium expired, enforce free tier limit (2MB)
+		effectiveStorageLimit = 2097152 // 2MB
+	}
+
+	if userStorage.StorageUsed+fileHeader.Size > effectiveStorageLimit {
+		if actualPackage == "free" && currentUserPackage == "premium" {
+			return nil, fmt.Errorf("your premium package has expired. Free tier storage limit: %d bytes, current usage: %d bytes", effectiveStorageLimit, userStorage.StorageUsed)
+		}
+		return nil, fmt.Errorf("storage limit exceeded. Available: %d bytes, File size: %d bytes", effectiveStorageLimit-userStorage.StorageUsed, fileHeader.Size)
 	}
 
 	file, err := fileHeader.Open()
@@ -91,7 +135,7 @@ func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *mu
 		FileSize:            fileHeader.Size,
 		S3ObjectKey:         s3ObjectKey,
 		ContentType:         fileHeader.Header.Get("Content-Type"),
-		UploadedWithPackage: currentUserPackage, // Set the package with which the file was uploaded
+		UploadedWithPackage: actualPackage, // Use actual package status
 	}
 
 	if err := s.fileRepo.CreateFileMetadata(fileMetadata); err != nil {
@@ -111,14 +155,26 @@ func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *mu
 }
 
 func (s *fileService) DownloadFile(ctx context.Context, userID int, fileID int, currentUserPackage string) (*minio.Object, *models.File, error) {
+	// Check if user's package is still valid
+	actualPackage, isValid, err := s.checkUserPackageValidity(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	fileMetadata, err := s.fileRepo.GetFileMetadata(fileID, userID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get file metadata: %w", err)
 	}
 
-	// Check if the file was uploaded with a premium package and if the user is still premium
-	if fileMetadata.UploadedWithPackage == "premium" && currentUserPackage != "premium" {
-		return nil, nil, fmt.Errorf("this file was uploaded with a premium package. Please upgrade to premium to access it")
+	// Check access permissions based on file upload package and current package status
+	if fileMetadata.UploadedWithPackage == "premium" {
+		if actualPackage != "premium" {
+			if !isValid {
+				return nil, nil, fmt.Errorf("this file was uploaded with a premium package, but your premium subscription has expired. Please upgrade to premium to access it")
+			} else {
+				return nil, nil, fmt.Errorf("this file was uploaded with a premium package. Please upgrade to premium to access it")
+			}
+		}
 	}
 
 	object, err := s.minioClient.GetObject(ctx, s.bucketName, fileMetadata.S3ObjectKey, minio.GetObjectOptions{})
@@ -129,9 +185,26 @@ func (s *fileService) DownloadFile(ctx context.Context, userID int, fileID int, 
 }
 
 func (s *fileService) DeleteFile(ctx context.Context, userID int, fileID int) error {
+	// Check if user's package is still valid for modifications
+	actualPackage, isValid, err := s.checkUserPackageValidity(userID)
+	if err != nil {
+		return err
+	}
+
 	fileMetadata, err := s.fileRepo.GetFileMetadata(fileID, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get file metadata: %w", err)
+	}
+
+	// Check if user can delete this file based on package status
+	if fileMetadata.UploadedWithPackage == "premium" {
+		if actualPackage != "premium" {
+			if !isValid {
+				return fmt.Errorf("this file was uploaded with a premium package, but your premium subscription has expired. Please upgrade to premium to manage it")
+			} else {
+				return fmt.Errorf("this file was uploaded with a premium package. Please upgrade to premium to manage it")
+			}
+		}
 	}
 
 	err = s.minioClient.RemoveObject(ctx, s.bucketName, fileMetadata.S3ObjectKey, minio.RemoveObjectOptions{})
@@ -154,9 +227,52 @@ func (s *fileService) DeleteFile(ctx context.Context, userID int, fileID int) er
 }
 
 func (s *fileService) GetUserStorageInfo(userID int) (*models.UserStorage, error) {
-	return s.fileRepo.GetUserStorage(userID)
+	// Check current package status and adjust storage info accordingly
+	actualPackage, _, err := s.checkUserPackageValidity(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userStorage, err := s.fileRepo.GetUserStorage(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If premium expired, show free tier limits
+	if actualPackage == "free" {
+		userStorage.StorageLimit = 2097152 // 2MB for free tier
+	}
+
+	return userStorage, nil
 }
 
 func (s *fileService) ListUserFiles(userID int) ([]*models.File, error) {
-	return s.fileRepo.GetFilesMetadataByUser(userID)
+	// Check if user's package is still valid
+	actualPackage, isValid, err := s.checkUserPackageValidity(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := s.fileRepo.GetFilesMetadataByUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter files based on current package status
+	var accessibleFiles []*models.File
+	for _, file := range files {
+		// If file was uploaded with premium but user no longer has valid premium
+		if file.UploadedWithPackage == "premium" && actualPackage != "premium" {
+			// Skip premium files if user doesn't have valid premium access
+			continue
+		}
+		accessibleFiles = append(accessibleFiles, file)
+	}
+
+	// Add a note in the response if some files are hidden due to expired premium
+	if len(accessibleFiles) < len(files) && !isValid {
+		// You might want to add a field to indicate hidden files, but for now we'll just return accessible files
+	}
+
+	return accessibleFiles, nil
 }

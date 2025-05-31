@@ -7,6 +7,7 @@ import (
 	"service/internal/models"
 	"service/internal/repositories"
 	"service/internal/utils"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -16,16 +17,22 @@ type AuthService interface {
 	LoginUser(email, password string) (string, string, error)
 	RequestPasswordReset(email string) error
 	ResetPassword(resetToken, newPassword string) error
-	UpgradeUserPackage(userID int, newPackage string) error // Added method to upgrade user package
+	UpgradeUserPackage(userID int, newPackage string) error
+	SetSchedulerService(scheduler SchedulerService)
 }
 
 type authService struct {
-	authRepo     repositories.AuthRepo
-	tokenService RefreshTokenService
+	authRepo         repositories.AuthRepo
+	tokenService     RefreshTokenService
+	schedulerService SchedulerService
 }
 
 func NewAuthService(authRepo repositories.AuthRepo, tokenService RefreshTokenService) AuthService {
 	return &authService{authRepo: authRepo, tokenService: tokenService}
+}
+
+func (s *authService) SetSchedulerService(scheduler SchedulerService) {
+	s.schedulerService = scheduler
 }
 
 func (s *authService) RegisterUser(userFromHandlers *models.User) error {
@@ -166,13 +173,28 @@ func (s *authService) UpgradeUserPackage(userID int, newPackage string) error {
 		return errors.New("invalid package type")
 	}
 
-	newStorage := 5242880
-	// Potentially add more logic here, e.g., payment processing, before upgrading
+	var newStorage int
+	if newPackage == "premium" {
+		newStorage = 5242880 // 5MB
+	} else {
+		newStorage = 2097152 // 2MB
+	}
+
 	err := s.authRepo.UpgradeUserPackage(userID, newStorage, newPackage)
 	if err != nil {
 		logger.LogError(err, "Failed to upgrade user package in service", map[string]interface{}{"layer": "service", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
 		return err
 	}
+
+	// If upgrading to premium, schedule expiration after 2 minutes
+	if newPackage == "premium" && s.schedulerService != nil {
+		err = s.schedulerService.SchedulePackageExpiration(userID, 2*time.Minute)
+		if err != nil {
+			logger.LogError(err, "Failed to schedule package expiration", map[string]interface{}{"layer": "service", "operation": "UpgradeUserPackage", "userID": userID})
+			// Don't return error here as the upgrade was successful
+		}
+	}
+
 	logger.LogDebug("User package upgraded in service", map[string]interface{}{"layer": "service", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
 	return nil
 }

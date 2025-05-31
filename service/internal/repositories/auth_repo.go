@@ -15,7 +15,10 @@ type AuthRepo interface {
 	GetUserByID(userID int) (*models.User, error)
 	ResetPassword(newPassword, resetToken string) error
 	RequestingPasswordReset(email, resetToken string, resetTokenExpiredAt time.Time) error
-	UpgradeUserPackage(userID, newStorage int, newPackage string) error // Added method to upgrade user package
+	UpgradeUserPackage(userID, newStorage int, newPackage string) error
+	SetPackageExpiry(userID int, expiryTime time.Time) error
+	GetExpiredPremiumUsers() ([]int, error)
+	ClearPackageExpiry(userID int) error
 }
 
 type authRepo struct {
@@ -47,7 +50,7 @@ func (r *authRepo) CreateUser(user *models.User) error {
 func (r *authRepo) GetUserByEmail(email string) (*models.User, error) {
 	// Create a new user struct to store the result
 	var user models.User
-	query := "SELECT user_id, email, username, password, package, storage_used, storage_limit FROM users WHERE email = $1" // Added package, storage_used, storage_limit
+	query := "SELECT user_id, email, username, password, package, storage_used, storage_limit, package_expiry FROM users WHERE email = $1"
 	// Get the user struct from the database using the query and the username
 	err := r.db.Get(&user, query, email)
 	if err != nil {
@@ -60,7 +63,7 @@ func (r *authRepo) GetUserByEmail(email string) (*models.User, error) {
 
 func (r *authRepo) GetUserByID(userID int) (*models.User, error) {
 	var user models.User
-	query := "SELECT user_id, email, username, password, package, storage_used, storage_limit FROM users WHERE user_id = $1" // Added package, storage_used, storage_limit
+	query := "SELECT user_id, email, username, password, package, storage_used, storage_limit, package_expiry FROM users WHERE user_id = $1"
 	err := r.db.Get(&user, query, userID)
 	if err != nil {
 		logger.LogError(err, "Failed to get user", map[string]interface{}{"layer": "repository", "operation": "GetUserByID"})
@@ -100,5 +103,39 @@ func (r *authRepo) UpgradeUserPackage(userID, newStorage int, newPackage string)
 		return err
 	}
 	logger.LogDebug("User package upgraded", map[string]interface{}{"layer": "repository", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
+	return nil
+}
+
+func (r *authRepo) SetPackageExpiry(userID int, expiryTime time.Time) error {
+	query := "UPDATE users SET package_expiry = $1 WHERE user_id = $2"
+	_, err := r.db.Exec(query, expiryTime, userID)
+	if err != nil {
+		logger.LogError(err, "Failed to set package expiry", map[string]interface{}{"layer": "repository", "operation": "SetPackageExpiry", "userID": userID})
+		return err
+	}
+	logger.LogDebug("Package expiry set", map[string]interface{}{"layer": "repository", "operation": "SetPackageExpiry", "userID": userID})
+	return nil
+}
+
+func (r *authRepo) GetExpiredPremiumUsers() ([]int, error) {
+	var userIDs []int
+	query := "SELECT user_id FROM users WHERE package = 'premium' AND package_expiry IS NOT NULL AND package_expiry < CURRENT_TIMESTAMP"
+	err := r.db.Select(&userIDs, query)
+	if err != nil {
+		logger.LogError(err, "Failed to get expired premium users", map[string]interface{}{"layer": "repository", "operation": "GetExpiredPremiumUsers"})
+		return nil, err
+	}
+	logger.LogDebug("Retrieved expired premium users", map[string]interface{}{"layer": "repository", "operation": "GetExpiredPremiumUsers", "count": len(userIDs)})
+	return userIDs, nil
+}
+
+func (r *authRepo) ClearPackageExpiry(userID int) error {
+	query := "UPDATE users SET package_expiry = NULL WHERE user_id = $1"
+	_, err := r.db.Exec(query, userID)
+	if err != nil {
+		logger.LogError(err, "Failed to clear package expiry", map[string]interface{}{"layer": "repository", "operation": "ClearPackageExpiry", "userID": userID})
+		return err
+	}
+	logger.LogDebug("Package expiry cleared", map[string]interface{}{"layer": "repository", "operation": "ClearPackageExpiry", "userID": userID})
 	return nil
 }

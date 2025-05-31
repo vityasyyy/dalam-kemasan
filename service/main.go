@@ -69,11 +69,14 @@ func main() {
 	authRepo := repositories.NewAuthRepo(db)
 	refreshTokenRepo := repositories.NewTokenRepository(db)
 	tokenService := services.NewRefreshTokenService(refreshTokenRepo, authRepo)
+	schedulerService := services.NewSchedulerService(authRepo)
 	authService := services.NewAuthService(authRepo, tokenService)
+	authService.SetSchedulerService(schedulerService)
 	userHandler := handlers.NewUserHandler(authService, tokenService)
+	schedulerHandler := handlers.NewSchedulerHandler(schedulerService)
 
 	fileRepo := repositories.NewFileRepo(db)
-	fileService, err := services.NewFileService(fileRepo)
+	fileService, err := services.NewFileService(fileRepo, authRepo)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to initialize file service")
 	}
@@ -104,7 +107,7 @@ func main() {
 	r.Use(requestSizeLimitMiddleware(2 << 20))
 	r.Use(timeoutMiddleware(20 * time.Second))
 
-	routes.InitializeRoutes(r, userHandler, fileHandler)
+	routes.InitializeRoutes(r, userHandler, fileHandler, schedulerHandler)
 
 	// Server configuration
 	port := os.Getenv("PORT")
@@ -118,13 +121,11 @@ func main() {
 		Handler: r,
 	}
 
-	// Start server in a goroutine
-	go func() {
-		logger.Log.Info().Msg("Server starting on port " + port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Log.Fatal().Err(err).Msg("Server failed to start")
-		}
-	}()
+	// Start server
+	logger.Log.Info().Msg("Server starting on port " + port)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		logger.Log.Fatal().Err(err).Msg("Server failed to start")
+	}
 
 	// Wait for interrupt signal to gracefully shutdown
 	<-ctx.Done()
