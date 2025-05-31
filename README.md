@@ -7,7 +7,7 @@
 1. Andreandhiki Riyanta Putra (23/517511/PA/22191)
 2. Daffa Indra Wibowo
 3. Fahmi Shampoerna
-4. Muhammad Argya Vityasy (23/522547/PA/22475) Auditing, Docker
+4. Muhammad Argya Vityasy (23/522547/PA/22475)
 5. Najma Clara Bella
 6. Rayhan Firdaus Ardian
 7. Sultan Devino Suyudi
@@ -25,6 +25,7 @@ Dalam Kemasan is a production-ready SaaS application designed to demonstrate mod
 - 🔐 **Secure Authentication** - JWT-based auth with refresh tokens
 - 📁 **File Management** - Upload, download, delete files with S3-compatible storage
 - 💾 **Storage Quotas** - Package-based storage limits (Free/Premium)
+- ⏰ **Smart Scheduling** - Dkron-based distributed cron jobs for package expiry management
 - 📊 **Real-time Monitoring** - Prometheus metrics & Grafana dashboards
 - 📝 **Centralized Logging** - Loki + Promtail log aggregation
 - 🛡️ **Security Hardened** - Rate limiting, request validation, security headers
@@ -51,6 +52,12 @@ Dalam Kemasan is a production-ready SaaS application designed to demonstrate mod
 │ Prometheus  │    │    Loki     │    │   Grafana   │
 │  Metrics    │    │   Logging   │    │ Dashboards │
 └─────────────┘    └─────────────┘    └─────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │     Dkron       │
+                    │ Job Scheduler   │
+                    └─────────────────┘
 ```
 
 ## 🚀 Quick Start
@@ -59,7 +66,6 @@ Dalam Kemasan is a production-ready SaaS application designed to demonstrate mod
 
 - Docker & Docker Compose
 - Git
-- 8GB+ RAM recommended
 
 ### 1. Clone Repository
 
@@ -76,6 +82,7 @@ Create the main environment file:
 # .env
 GRAFANA_PORT=3000
 AUTH_SERVICE_PORT=8081
+DKRON_PORT=8080
 ```
 
 Create service environment file:
@@ -114,7 +121,11 @@ docker network create dalam-kemasan-network
 ### 4. Launch Services
 
 ```bash
-# Build and start all services
+# Using the automated script (recommended)
+chmod +x scripts/start-services.sh
+./scripts/start-services.sh
+
+# Or manually
 docker-compose up --build -d
 
 # View logs
@@ -122,6 +133,11 @@ docker-compose logs -f
 
 # Check service health
 docker-compose ps
+```
+#### 4.1 Add job to dkron 
+```bash
+chmod +x scripts/setup-dkron-jobs.sh
+./scripts/setup-dkron-jobs.sh
 ```
 
 ### 5. Access Services
@@ -131,7 +147,37 @@ docker-compose ps
 | **API** | http://localhost:8081 | - |
 | **Grafana** | http://localhost:3000 | admin / admin |
 | **Prometheus** | http://localhost:9090 | - |
+| **Dkron Scheduler** | http://localhost:8080 | - |
 | **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin123 |
+
+## ⏰ Package Expiry Management
+
+The system uses **Dkron** (distributed cron) for automated package expiry management:
+
+### How It Works
+1. **Premium Upgrade**: When users upgrade to premium, expiry is set to 2 minutes (configurable)
+2. **Scheduled Checks**: Dkron runs every 2 minutes to check for expired packages
+3. **Automatic Downgrade**: Expired users are automatically downgraded to free tier
+4. **Real-time Enforcement**: File operations check expiry in real-time, not waiting for cron
+
+### Features
+- ✅ **Distributed scheduling** with fault tolerance
+- ✅ **Web UI monitoring** at http://localhost:8080
+- ✅ **Automatic retries** on job failures
+- ✅ **Real-time access control** for expired packages
+- ✅ **Container-native** solution
+
+### Manual Job Management
+```bash
+# Trigger package expiry check manually
+curl -X POST http://localhost:8080/v1/jobs/check-expired-packages/executions
+
+# View job status
+curl http://localhost:8080/v1/jobs
+
+# Check specific job details
+curl http://localhost:8080/v1/jobs/check-expired-packages
+```
 
 ## 📚 API Documentation
 
@@ -164,11 +210,14 @@ GET /api/v1/auth/files/list
 # Download file
 GET /api/v1/auth/files/download/{fileID}
 
-# Upgrade package
+# Upgrade package (expires in 2 minutes for demo)
 POST /api/v1/auth/billing/upgrade
 {
   "package": "premium"
 }
+
+# Internal scheduler endpoint (called by dkron)
+POST /api/v1/internal/scheduler/check-expired-packages
 ```
 
 ## 🛠️ Tech Stack
@@ -178,6 +227,7 @@ POST /api/v1/auth/billing/upgrade
 | **Backend** | Go 1.21+, Gin Framework |
 | **Database** | PostgreSQL 17 |
 | **Storage** | MinIO (S3-compatible) |
+| **Scheduling** | Dkron (Distributed Cron) |
 | **Monitoring** | Prometheus + Grafana |
 | **Logging** | Loki + Promtail |
 | **Containerization** | Docker + Docker Compose |
@@ -205,14 +255,31 @@ go build -o bin/service main.go
 3. **Data Access** → `service/internal/repositories/`
 4. **Models** → `service/internal/models/`
 5. **Routes** → `service/internal/routes/`
+6. **Scheduler Jobs** → Configure via Dkron API or scripts
+
+### Testing Package Expiry
+
+```bash
+# 1. Register and login as a user
+# 2. Upgrade to premium package
+# 3. Upload some files
+# 4. Wait 2 minutes
+# 5. Try to access premium files (should be blocked)
+# 6. Check dkron logs to see automatic downgrade
+
+# Monitor the process
+docker-compose logs -f dkron
+docker-compose logs -f service-api
+```
 
 ## 📊 Monitoring & Observability
 
 ### Grafana Dashboards
 
-- **service Metrics** - Request rates, response times, error rates
+- **Service Metrics** - Request rates, response times, error rates
 - **System Metrics** - CPU, Memory, Disk usage
 - **Business Metrics** - User registrations, file uploads, storage usage
+- **Scheduler Metrics** - Job execution times, success/failure rates
 
 ### Log Queries (Loki)
 
@@ -225,7 +292,20 @@ go build -o bin/service main.go
 
 # View specific operation
 {compose_service="service-api"} |= "LoginUser"
+
+# Monitor package expiry checks
+{compose_service="service-api"} |= "Package expiration check"
+
+# View dkron logs
+{compose_service="dkron"}
 ```
+
+### Dkron Monitoring
+
+- **Web UI**: http://localhost:8080
+- **Job Status**: Monitor execution history and failures
+- **Metrics**: Track job performance and reliability
+- **Alerts**: Configure notifications for job failures
 
 ## 🚀 Future Enhancements & Roadmap
 
@@ -234,6 +314,12 @@ go build -o bin/service main.go
 - [ ] Subscription management
 - [ ] Billing history and invoices
 - [ ] Usage-based pricing tiers
+
+### ⏰ Advanced Scheduling
+- [ ] **Multiple job types** (cleanup, reports, notifications)
+- [ ] **Dynamic scheduling** based on user activity
+- [ ] **Job queuing** for high-volume operations
+- [ ] **Distributed job execution** across multiple nodes
 
 ### 🔄 Advanced Features
 - [ ] File versioning and history
