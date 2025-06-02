@@ -37,6 +37,7 @@ func InitializeRoutes(r *gin.Engine, userHandler *handlers.UserHandler, fileHand
 			// File management
 			fileRoutes := authRoutes.Group("/files")
 			{
+				fileRoutes.GET("/billing", fileHandler.GetBillingInfoHandler)
 				fileRoutes.POST("/upload", fileHandler.UploadFileHandler)
 				fileRoutes.GET("/list", fileHandler.ListFilesHandler)
 				fileRoutes.GET("/download/:fileID", fileHandler.DownloadFileHandler)

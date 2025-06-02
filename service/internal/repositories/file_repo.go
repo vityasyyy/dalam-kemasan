@@ -11,7 +11,7 @@ type FileRepo interface {
 	GetFileMetadata(fileID int, userID int) (*models.File, error)
 	GetFilesMetadataByUser(userID int) ([]*models.File, error)
 	DeleteFileMetadata(fileID int, userID int) error
-	UpdateUserStorage(userID int, fileSize int64) error
+	UpdateUserStorage(userID int, fileSize int64, packageType string) error
 	GetUserStorage(userID int) (*models.UserStorage, error)
 }
 
@@ -48,15 +48,20 @@ func (r *fileRepo) DeleteFileMetadata(fileID int, userID int) error {
 	return err
 }
 
-func (r *fileRepo) UpdateUserStorage(userID int, fileSize int64) error {
-	query := "UPDATE users SET storage_used = storage_used + $1 WHERE user_id = $2"
+func (r *fileRepo) UpdateUserStorage(userID int, fileSize int64, packageType string) error {
+	var query string
+	if packageType == "premium" {
+		query = "UPDATE users SET premium_storage_used = premium_storage_used + $1 WHERE user_id = $2"
+	} else {
+		query = "UPDATE users SET free_storage_used = free_storage_used + $1 WHERE user_id = $2"
+	}
 	_, err := r.db.Exec(query, fileSize, userID)
 	return err
 }
 
 func (r *fileRepo) GetUserStorage(userID int) (*models.UserStorage, error) {
 	storage := &models.UserStorage{}
-	query := "SELECT user_id, storage_used, storage_limit FROM users WHERE user_id = $1"
+	query := "SELECT user_id, free_storage_used, free_storage_limit, premium_storage_used, premium_storage_limit FROM users WHERE user_id = $1"
 	err := r.db.Get(storage, query, userID)
 	return storage, err
 }

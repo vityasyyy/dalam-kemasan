@@ -6,8 +6,10 @@ CREATE TABLE IF NOT EXISTS users(
     reset_token_expiry TIMESTAMP,
     password VARCHAR(255) NOT NUll,
     package VARCHAR(50) NOT NULL DEFAULT 'free',
-    storage_used BIGINT DEFAULT 0,
-    storage_limit BIGINT DEFAULT 2097152, -- 2MB in bytes
+    free_storage_used BIGINT DEFAULT 0,
+    free_storage_limit BIGINT DEFAULT 2097152, -- 2MB in bytes
+    premium_storage_used BIGINT DEFAULT 0,
+    premium_storage_limit BIGINT DEFAULT 5242880, -- 5MB in bytes
     package_expiry TIMESTAMP -- Added package expiry field
 );
 

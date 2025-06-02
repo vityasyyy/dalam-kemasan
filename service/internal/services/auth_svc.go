@@ -173,14 +173,7 @@ func (s *authService) UpgradeUserPackage(userID int, newPackage string) error {
 		return errors.New("invalid package type")
 	}
 
-	var newStorage int
-	if newPackage == "premium" {
-		newStorage = 5242880 // 5MB
-	} else {
-		newStorage = 2097152 // 2MB
-	}
-
-	err := s.authRepo.UpgradeUserPackage(userID, newStorage, newPackage)
+	err := s.authRepo.UpgradeUserPackage(userID, newPackage)
 	if err != nil {
 		logger.LogError(err, "Failed to upgrade user package in service", map[string]interface{}{"layer": "service", "operation": "UpgradeUserPackage", "userID": userID, "newPackage": newPackage})
 		return err

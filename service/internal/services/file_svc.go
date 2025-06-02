@@ -100,20 +100,18 @@ func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *mu
 		return nil, fmt.Errorf("failed to get user storage: %w", err)
 	}
 
-	// Adjust storage limit based on actual package status
-	var effectiveStorageLimit int64
+	// Determine which storage to use and check limits
+	var currentStorageUsed, storageLimit int64
 	if actualPackage == "premium" {
-		effectiveStorageLimit = userStorage.StorageLimit
+		currentStorageUsed = userStorage.PremiumStorageUsed
+		storageLimit = userStorage.PremiumStorageLimit
 	} else {
-		// If premium expired, enforce free tier limit (2MB)
-		effectiveStorageLimit = 2097152 // 2MB
+		currentStorageUsed = userStorage.FreeStorageUsed
+		storageLimit = userStorage.FreeStorageLimit
 	}
 
-	if userStorage.StorageUsed+fileHeader.Size > effectiveStorageLimit {
-		if actualPackage == "free" && currentUserPackage == "premium" {
-			return nil, fmt.Errorf("your premium package has expired. Free tier storage limit: %d bytes, current usage: %d bytes", effectiveStorageLimit, userStorage.StorageUsed)
-		}
-		return nil, fmt.Errorf("storage limit exceeded. Available: %d bytes, File size: %d bytes", effectiveStorageLimit-userStorage.StorageUsed, fileHeader.Size)
+	if currentStorageUsed+fileHeader.Size > storageLimit {
+		return nil, fmt.Errorf("storage limit exceeded. Available: %d bytes, File size: %d bytes", storageLimit-currentStorageUsed, fileHeader.Size)
 	}
 
 	file, err := fileHeader.Open()
@@ -144,7 +142,7 @@ func (s *fileService) UploadFile(ctx context.Context, userID int, fileHeader *mu
 		return nil, fmt.Errorf("failed to create file metadata: %w", err)
 	}
 
-	if err := s.fileRepo.UpdateUserStorage(userID, fileHeader.Size); err != nil {
+	if err := s.fileRepo.UpdateUserStorage(userID, fileHeader.Size, actualPackage); err != nil {
 		// Attempt to delete the object from Minio and metadata if storage update fails
 		_ = s.minioClient.RemoveObject(ctx, s.bucketName, s3ObjectKey, minio.RemoveObjectOptions{})
 		_ = s.fileRepo.DeleteFileMetadata(fileMetadata.FileID, userID) // Assuming FileID is populated after CreateFileMetadata
@@ -217,7 +215,8 @@ func (s *fileService) DeleteFile(ctx context.Context, userID int, fileID int) er
 		return fmt.Errorf("failed to delete file metadata: %w", err)
 	}
 
-	if err := s.fileRepo.UpdateUserStorage(userID, -fileMetadata.FileSize); err != nil {
+	// Update the appropriate storage based on the file's uploaded package
+	if err := s.fileRepo.UpdateUserStorage(userID, -fileMetadata.FileSize, fileMetadata.UploadedWithPackage); err != nil {
 		// This is problematic, as the file is deleted but storage isn't updated.
 		// Log this error critically.
 		return fmt.Errorf("CRITICAL: failed to update user storage after file deletion: %w", err)
@@ -227,8 +226,8 @@ func (s *fileService) DeleteFile(ctx context.Context, userID int, fileID int) er
 }
 
 func (s *fileService) GetUserStorageInfo(userID int) (*models.UserStorage, error) {
-	// Check current package status and adjust storage info accordingly
-	actualPackage, _, err := s.checkUserPackageValidity(userID)
+	// Check current package status
+	_, _, err := s.checkUserPackageValidity(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -238,17 +237,12 @@ func (s *fileService) GetUserStorageInfo(userID int) (*models.UserStorage, error
 		return nil, err
 	}
 
-	// If premium expired, show free tier limits
-	if actualPackage == "free" {
-		userStorage.StorageLimit = 2097152 // 2MB for free tier
-	}
-
 	return userStorage, nil
 }
 
 func (s *fileService) ListUserFiles(userID int) ([]*models.File, error) {
 	// Check if user's package is still valid
-	actualPackage, isValid, err := s.checkUserPackageValidity(userID)
+	actualPackage, _, err := s.checkUserPackageValidity(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -267,11 +261,6 @@ func (s *fileService) ListUserFiles(userID int) ([]*models.File, error) {
 			continue
 		}
 		accessibleFiles = append(accessibleFiles, file)
-	}
-
-	// Add a note in the response if some files are hidden due to expired premium
-	if len(accessibleFiles) < len(files) && !isValid {
-		// You might want to add a field to indicate hidden files, but for now we'll just return accessible files
 	}
 
 	return accessibleFiles, nil

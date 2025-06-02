@@ -14,7 +14,9 @@ type File struct {
 }
 
 type UserStorage struct {
-	UserID       int   `json:"user_id" db:"user_id"`
-	StorageUsed  int64 `json:"storage_used" db:"storage_used"`
-	StorageLimit int64 `json:"storage_limit" db:"storage_limit"`
+	UserID              int   `json:"user_id" db:"user_id"`
+	FreeStorageUsed     int64 `json:"free_storage_used" db:"free_storage_used"`
+	FreeStorageLimit    int64 `json:"free_storage_limit" db:"free_storage_limit"`
+	PremiumStorageUsed  int64 `json:"premium_storage_used" db:"premium_storage_used"`
+	PremiumStorageLimit int64 `json:"premium_storage_limit" db:"premium_storage_limit"`
 }

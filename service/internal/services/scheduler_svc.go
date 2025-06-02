@@ -63,7 +63,7 @@ func (s *schedulerService) CheckAndDowngradeExpiredPackages() (int, error) {
 
 	for _, userID := range expiredUsers {
 		// Downgrade to free package with 2MB storage limit
-		err := s.authRepo.UpgradeUserPackage(userID, 2097152, "free") // 2MB = 2 * 1024 * 1024
+		err := s.authRepo.UpgradeUserPackage(userID, "free") // 2MB = 2 * 1024 * 1024
 		if err != nil {
 			logger.LogError(err, "Failed to downgrade expired user", map[string]interface{}{
 				"layer":     "service",
