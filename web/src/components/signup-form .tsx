@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import * as motion from "motion/react-client";
 import { AuroraText } from "@/components/magicui/aurora-text";
 
-export function LoginForm({
+export function SignupForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
@@ -37,6 +37,15 @@ export function LoginForm({
 					</div>
 					<div className="flex flex-col gap-6">
 						<div className="grid gap-3">
+							<Label htmlFor="name">Name</Label>
+							<Input
+								id="name"
+								type="name"
+								placeholder="John Doe"
+								required
+							/>
+						</div>
+						<div className="grid gap-3">
 							<Label htmlFor="email">Email</Label>
 							<Input
 								id="email"
@@ -50,20 +59,20 @@ export function LoginForm({
 								<Label htmlFor="password">Password</Label>
 							</div>
 							<Input id="password" type="password" required />
-							<a
-								href="#"
-								className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-							>
-								Forgot your password?
-							</a>
 						</div>
-						<Button type="submit" className="w-full hover:bg-green-600">
-							Login
+						<div className="grid gap-3">
+							<div className="flex items-center">
+								<Label htmlFor="confirm-password">Confirm Password</Label>
+							</div>
+							<Input id="confirm-password" type="confirm-password" required />
+						</div>
+						<Button type="submit" className="w-full mt-2 hover:bg-green-600">
+							Sign up
 						</Button>
 						<div className="text-center text-sm">
-							Don&apos;t have an account?{" "}
-							<a href="/register" className="underline underline-offset-4 text-green-500 hover:text-green-200">
-								Sign up
+							Already have an account?{" "}
+							<a href="/login" className="underline underline-offset-4 text-green-500 hover:text-green-200">
+								Login
 							</a>
 						</div>
 					</div>
