@@ -1,3 +1,4 @@
+import Footer from "@/modules/home/footer";
 import Hero from "@/modules/home/hero";
 import Navbar from "@/modules/home/navbar";
 import NavbarResolver from "@/modules/home/navbar-resolver";
@@ -8,6 +9,7 @@ export default function Home() {
 			<Navbar />
 			<NavbarResolver />
 			<Hero />
+			<Footer />
 		</main>
 	);
 }

@@ -1,12 +1,13 @@
 import Container from "@/components/container";
 import { AnimatedShinyText } from "@/components/magicui/animated-shiny-text";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowRightIcon } from "lucide-react";
 import * as motion from "motion/react-client";
 
 const Hero = () => {
 	return (
-		<main className="min-h-[80vh] flex flex-col items-center gap-4">
+		<main className="min-h-[80vh] flex flex-col items-center gap-8">
 			<div
 				className={cn(
 					"group rounded-full border border-black/5 bg-neutral-100 text-base mb-4 text-white transition-all ease-in hover:cursor-pointer hover:bg-neutral-200 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800"
@@ -28,10 +29,23 @@ const Hero = () => {
 				initial={{ opacity: 0, y: -5 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.2, duration: 0.4 }}
-				className="mt-4 text-lg text-neutral-500 text-center">
+				className="text-lg text-neutral-500 text-center">
 				We are glad to have you here. Explore our content and enjoy your
 				stay!
 			</motion.p>
+
+			<motion.section
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.4, duration: 0.4 }}
+				className="flex gap-2 mt-4">
+				<Button variant={`default`} size={`lg`} className="rounded-sm">
+					Get Started
+				</Button>
+				<Button variant={`outline`} size={`lg`} className="rounded-sm">
+					Learn More
+				</Button>
+			</motion.section>
 		</main>
 	);
 };
