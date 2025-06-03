@@ -13,18 +13,18 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { 
-	HardDrive, 
-	Star, 
-	Share2, 
-	Clock, 
-	Trash2, 
-	Settings, 
+import {
+	HardDrive,
+	Star,
+	Share2,
+	Clock,
+	Trash2,
+	Settings,
 	Plus,
 	Users,
 	FolderOpen,
 	FileText,
-	Upload
+	Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -81,7 +81,7 @@ const AppSidebar = () => {
 					CloudDrive
 				</div>
 			</SidebarHeader>
-			
+
 			<SidebarContent className="space-y-4">
 				{/* Quick Actions */}
 				<SidebarGroup>
@@ -90,7 +90,10 @@ const AppSidebar = () => {
 							<Plus className="mr-2 h-4 w-4" />
 							New
 						</Button>
-						<Button variant="outline" className="w-full justify-start" size="sm">
+						<Button
+							variant="outline"
+							className="w-full justify-start"
+							size="sm">
 							<Upload className="mr-2 h-4 w-4" />
 							Upload
 						</Button>
@@ -103,11 +106,10 @@ const AppSidebar = () => {
 						<SidebarMenu>
 							{mainItems.map((item) => (
 								<SidebarMenuItem key={item.label}>
-									<SidebarMenuButton 
-										asChild 
+									<SidebarMenuButton
+										asChild
 										isActive={pathname === item.href}
-										className="px-3 py-2"
-									>
+										className="px-3 py-2">
 										<Link href={item.href}>
 											{item.icon}
 											<span>{item.label}</span>
@@ -128,11 +130,10 @@ const AppSidebar = () => {
 						<SidebarMenu>
 							{quickItems.map((item) => (
 								<SidebarMenuItem key={item.label}>
-									<SidebarMenuButton 
-										asChild 
+									<SidebarMenuButton
+										asChild
 										isActive={pathname === item.href}
-										className="px-3 py-2"
-									>
+										className="px-3 py-2">
 										<Link href={item.href}>
 											{item.icon}
 											<span>{item.label}</span>
@@ -144,7 +145,7 @@ const AppSidebar = () => {
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
-			
+
 			<SidebarFooter className="p-4 space-y-4">
 				{/* Storage Usage */}
 				<div className="space-y-2">

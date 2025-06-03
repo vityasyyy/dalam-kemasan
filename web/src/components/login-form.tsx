@@ -13,26 +13,29 @@ export function LoginForm({
 			<form>
 				<div className="flex flex-col gap-6">
 					<div className="flex flex-col items-center gap-2">
-            <motion.h1
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-                duration: 0.4,
-                scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 },
-            }}
-            style={{
+						<motion.h1
+							initial={{ opacity: 0, scale: 0 }}
+							animate={{ opacity: 1, scale: 1 }}
+							transition={{
+								duration: 0.4,
+								scale: {
+									type: "spring",
+									visualDuration: 0.4,
+									bounce: 0.5,
+								},
+							}}
+							style={{
 								fontSize: "2rem",
-                fontWeight: "bold",
+								fontWeight: "bold",
 								textAlign: "center",
 								width: "100%",
 								height: "100%",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
-							}}
-						>
+							}}>
 							Dalam Kemasan
-              </motion.h1>
+						</motion.h1>
 					</div>
 					<div className="flex flex-col gap-6">
 						<div className="grid gap-3">
@@ -51,8 +54,7 @@ export function LoginForm({
 							<Input id="password" type="password" required />
 							<a
 								href="#"
-								className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-							>
+								className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
 								Forgot your password?
 							</a>
 						</div>
@@ -61,7 +63,9 @@ export function LoginForm({
 						</Button>
 						<div className="text-center text-sm">
 							Don&apos;t have an account?{" "}
-							<a href="#" className="underline underline-offset-4">
+							<a
+								href="#"
+								className="underline underline-offset-4">
 								Sign up
 							</a>
 						</div>
