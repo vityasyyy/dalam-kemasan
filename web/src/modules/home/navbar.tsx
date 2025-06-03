@@ -26,7 +26,7 @@ const Navbar = () => {
 	return (
 		<main
 			className={cn(
-				`fixed flex items-center inset-x-0 justify-between py-3 px-12 transition-all top-4 mx-auto w-full max-w-4xl rounded-3xl z-50 bg-transparent transition-ease-out duration-200`,
+				`fixed flex items-center inset-x-0 justify-between py-3 px-12 transition-all top-4 mx-auto w-full max-w-4xl rounded-3xl z-50 bg-transparent ease-out  duration-200`,
 				{
 					"max-w-2xl border border-accent bg-background/20 backdrop-blur-md px-8":
 						isScrolled,
