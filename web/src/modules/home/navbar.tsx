@@ -27,7 +27,7 @@ const Navbar = () => {
 		<Container className="">
 			<main
 				className={cn(
-					`fixed flex items-center justify-between py-4 px-12 transition-all top-4 inset-x-[5%] rounded-3xl z-50 bg-transparent  transition-ease-out duration-200`,
+					`fixed flex items-center justify-between py-3 px-12 transition-all top-4 inset-x-[5%] rounded-3xl z-50 bg-transparent  transition-ease-out duration-200`,
 					{
 						"inset-x-[13%] border border-accent bg-background px-8":
 							isScrolled,
