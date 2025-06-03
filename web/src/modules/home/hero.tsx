@@ -28,7 +28,7 @@ const Hero = () => {
 				initial={{ opacity: 0, y: -5 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.2, duration: 0.4 }}
-				className="mt-4 text-lg text-neutral-200 text-center">
+				className="mt-4 text-lg text-neutral-500 text-center">
 				We are glad to have you here. Explore our content and enjoy your
 				stay!
 			</motion.p>
