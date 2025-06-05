@@ -1,4 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
 	Sidebar,
 	SidebarContent,
@@ -11,20 +13,19 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
-	HardDrive,
-	Star,
-	Share2,
+	Box,
 	Clock,
-	Trash2,
-	Settings,
-	Plus,
-	Users,
-	FolderOpen,
+	CreditCard,
 	FileText,
+	FolderOpen,
+	HardDrive,
+	Plus,
+	Settings,
+	Star,
+	Trash2,
 	Upload,
+	Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -77,8 +78,8 @@ const AppSidebar = () => {
 		<Sidebar className="px-4">
 			<SidebarHeader className="p-4">
 				<div className="flex items-center gap-2 font-semibold text-lg">
-					<HardDrive className="h-6 w-6 text-blue-600" />
-					CloudDrive
+					<Box className="h-6 w-6" />
+					in-box
 				</div>
 			</SidebarHeader>
 
@@ -157,10 +158,16 @@ const AppSidebar = () => {
 					<Button variant="outline" size="sm" className="w-full">
 						Upgrade Storage
 					</Button>
-				</div>
-
-				{/* Settings */}
+				</div>				{/* Settings */}
 				<SidebarMenu>
+					<SidebarMenuItem>
+						<SidebarMenuButton asChild>
+							<Link href="/dashboard/billing">
+								<CreditCard className="h-4 w-4" />
+								<span>Billing</span>
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild>
 							<Link href="/dashboard/settings">
