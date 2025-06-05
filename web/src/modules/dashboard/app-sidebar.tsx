@@ -158,7 +158,8 @@ const AppSidebar = () => {
 					<Button variant="outline" size="sm" className="w-full">
 						Upgrade Storage
 					</Button>
-				</div>				{/* Settings */}
+				</div>{" "}
+				{/* Settings */}
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild>

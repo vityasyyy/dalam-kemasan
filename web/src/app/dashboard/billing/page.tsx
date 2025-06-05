@@ -1,6 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Check, Crown, Zap } from "lucide-react";
 import BillingHistory from "@/modules/dashboard/billing-history";
@@ -57,7 +63,9 @@ export default function BillingPage() {
 		<div className="space-y-8">
 			{/* Header */}
 			<div>
-				<h1 className="text-3xl font-bold tracking-tight">Billing & Plans</h1>
+				<h1 className="text-3xl font-bold tracking-tight">
+					Billing & Plans
+				</h1>
 				<p className="text-muted-foreground">
 					Manage your subscription and billing information
 				</p>
@@ -78,17 +86,23 @@ export default function BillingPage() {
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="font-medium">Free Plan</p>
-							<p className="text-sm text-muted-foreground">5 GB storage • 100 files limit</p>
+							<p className="text-sm text-muted-foreground">
+								5 GB storage • 100 files limit
+							</p>
 						</div>
 						<Badge variant="secondary">Active</Badge>
 					</div>
 					<div className="space-y-2">
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Storage used</span>
+							<span className="text-muted-foreground">
+								Storage used
+							</span>
 							<span className="font-medium">2.3 GB / 5 GB</span>
 						</div>
 						<div className="w-full bg-secondary rounded-full h-2">
-							<div className="bg-primary h-2 rounded-full" style={{ width: "46%" }}></div>
+							<div
+								className="bg-primary h-2 rounded-full"
+								style={{ width: "46%" }}></div>
 						</div>
 					</div>
 				</CardContent>
@@ -99,7 +113,11 @@ export default function BillingPage() {
 				<h2 className="text-2xl font-bold mb-6">Choose Your Plan</h2>
 				<div className="grid md:grid-cols-2 gap-6">
 					{tiers.map((tier) => (
-						<Card key={tier.name} className={`relative ${tier.popular ? 'border-primary shadow-lg' : ''}`}>
+						<Card
+							key={tier.name}
+							className={`relative ${
+								tier.popular ? "border-primary shadow-lg" : ""
+							}`}>
 							{tier.popular && (
 								<div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
 									<Badge className="bg-primary text-primary-foreground">
@@ -109,7 +127,9 @@ export default function BillingPage() {
 								</div>
 							)}
 							<CardHeader className="text-center pb-4">
-								<CardTitle className="text-xl">{tier.name}</CardTitle>
+								<CardTitle className="text-xl">
+									{tier.name}
+								</CardTitle>
 								<div className="space-y-1">
 									<p className="text-3xl font-bold">
 										{tier.price}
@@ -117,34 +137,39 @@ export default function BillingPage() {
 											/{tier.period}
 										</span>
 									</p>
-									<CardDescription>{tier.description}</CardDescription>
+									<CardDescription>
+										{tier.description}
+									</CardDescription>
 								</div>
-							</CardHeader>							<CardContent className="space-y-4">
+							</CardHeader>{" "}
+							<CardContent className="space-y-4">
 								{tier.name === "Premium" ? (
 									<UpgradeModal>
-										<Button 
-											className="w-full" 
+										<Button
+											className="w-full"
 											variant={tier.buttonVariant}
-											disabled={tier.current}
-										>
+											disabled={tier.current}>
 											{tier.buttonText}
 										</Button>
 									</UpgradeModal>
 								) : (
-									<Button 
-										className="w-full" 
+									<Button
+										className="w-full"
 										variant={tier.buttonVariant}
-										disabled={tier.current}
-									>
+										disabled={tier.current}>
 										{tier.buttonText}
 									</Button>
 								)}
-								
+
 								<div className="space-y-3">
-									<h4 className="font-medium text-sm">What's included:</h4>
+									<h4 className="font-medium text-sm">
+										What's included:
+									</h4>
 									<ul className="space-y-2">
 										{tier.features.map((feature) => (
-											<li key={feature} className="flex items-start gap-2 text-sm">
+											<li
+												key={feature}
+												className="flex items-start gap-2 text-sm">
 												<Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
 												<span>{feature}</span>
 											</li>
@@ -154,14 +179,24 @@ export default function BillingPage() {
 
 								{tier.limitations && (
 									<div className="space-y-3 pt-3 border-t">
-										<h4 className="font-medium text-sm text-muted-foreground">Limitations:</h4>
+										<h4 className="font-medium text-sm text-muted-foreground">
+											Limitations:
+										</h4>
 										<ul className="space-y-2">
-											{tier.limitations.map((limitation) => (
-												<li key={limitation} className="flex items-start gap-2 text-sm text-muted-foreground">
-													<span className="text-muted-foreground mt-0.5">•</span>
-													<span>{limitation}</span>
-												</li>
-											))}
+											{tier.limitations.map(
+												(limitation) => (
+													<li
+														key={limitation}
+														className="flex items-start gap-2 text-sm text-muted-foreground">
+														<span className="text-muted-foreground mt-0.5">
+															•
+														</span>
+														<span>
+															{limitation}
+														</span>
+													</li>
+												)
+											)}
 										</ul>
 									</div>
 								)}
