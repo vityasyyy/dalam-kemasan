@@ -1,11 +1,10 @@
-import { SignupForm } from "@/components/signup-form "
+import { SignupForm } from "@/components/signup-form";
+import { PageLayout } from "@/components/layouts/page-layout";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
-    <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <SignupForm />
-      </div>
-    </div>
-  )
+    <PageLayout maxWidth="sm" className="min-h-svh flex items-center justify-center">
+      <SignupForm />
+    </PageLayout>
+  );
 }
